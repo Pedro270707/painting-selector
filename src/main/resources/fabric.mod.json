@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "paintingselector",
+	"version": "1.0.0",
+	"name": "Painting Selector",
+	"description": "A mod that adds a selector upon right-clicking a painting in the air",
+	"authors": [
+		"Pedro Ricardo"
+	],
+	"contact": {
+		"homepage": "https://pedroricardo.net/",
+		"sources": "https://github.com/Pedro270707/painting-selector"
+	},
+	"license": "MIT",
+	"icon": "assets/paintingselector/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+          "net.pedroricardo.PaintingSelector"
+		],
+		"client": [
+          "net.pedroricardo.PaintingSelectorClient"
+		]
+	},
+	"mixins": [
+		{
+			"environment": "client",
+			"config": "paintingselector.client.mixins.json"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.10",
+		"minecraft": "~1.20.6",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

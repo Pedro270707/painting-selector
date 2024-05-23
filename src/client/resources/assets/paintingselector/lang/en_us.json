@@ -1,0 +1,12 @@
+{
+  "painting_selector.title": "Select Painting",
+  "painting_selector.no_paintings": "No paintings available (how?)",
+  "narration.painting_selector.widget": "Selected: '%s' by %s, size: %s by %s",
+  "painting_selector.search": "Search...",
+  "text.config.painting-selector.title": "Painting Selector",
+  "text.config.painting-selector.option.fixSetPaintingPlacement": "Fix Set Painting Placement",
+  "text.config.painting-selector.option.fixSetPaintingPlacement.tooltip": "Stops paintings from disappearing (\"ghost paintings\")\nwhen the client places them down in a place where\nthey do not fit.",
+  "text.config.painting-selector.option.searchBar": "Search Bar",
+  "text.config.painting-selector.option.narrateAll": "Narrate All",
+  "text.config.painting-selector.option.narrateAll.tooltip": "Makes the narrator also include the author and size\nof each painting."
+}

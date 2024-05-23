@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "net.pedroricardo.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+      "PaintingItemFixMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
