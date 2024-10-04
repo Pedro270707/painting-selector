@@ -6,6 +6,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.tag.PaintingVariantTags;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +21,10 @@ public class PaintingSelector implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sender.sendPacket(new Identifier(PaintingSelector.MOD_ID, "sync_client"), PacketByteBufs.empty()));
 		ServerPlayNetworking.registerGlobalReceiver(new Identifier(PaintingSelector.MOD_ID, "change_painting"), (server, player, handler, buf, responseSender) -> {
 			int slot = buf.readInt();
+			Identifier paintingId = buf.readIdentifier();
 			ItemStack stack = player.getInventory().getStack(slot);
 			if (stack.isEmpty() || !stack.isOf(Items.PAINTING)) return;
-			PSHelper.setPaintingId(stack, buf.readIdentifier());
+			PSHelper.setPaintingId(player, stack, paintingId);
 			player.getInventory().setStack(slot, stack);
 			player.currentScreenHandler.sendContentUpdates();
 		});
