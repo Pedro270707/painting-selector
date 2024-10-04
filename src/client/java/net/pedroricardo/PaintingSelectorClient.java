@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.PaintingVariantTags;
 import net.minecraft.util.TypedActionResult;
 import net.pedroricardo.network.PSClientPackets;
 
@@ -30,9 +31,12 @@ public class PaintingSelectorClient implements ClientModInitializer {
 			if (stack.isOf(Items.PAINTING)) {
 				MinecraftClient.getInstance().setScreen(new PaintingSelectorScreen(() -> {
 					ArrayList<Optional<RegistryEntry<PaintingVariant>>> paintings = new ArrayList<>();
-					if (player.isCreative() || inPaintingSelectorServer) {
+					if (player.isCreative()) {
 						paintings.add(Optional.empty());
 						world.getRegistryManager().get(RegistryKeys.PAINTING_VARIANT).streamEntries().forEach(paintingVariant -> paintings.add(Optional.of(paintingVariant)));
+					} else if (inPaintingSelectorServer) {
+						paintings.add(Optional.empty());
+                        world.getRegistryManager().get(RegistryKeys.PAINTING_VARIANT).iterateEntries(PaintingVariantTags.PLACEABLE).forEach(paintingVariant -> paintings.add(Optional.of(paintingVariant)));
 					} else {
 						NbtComponent nbtComponent = stack.getOrDefault(DataComponentTypes.ENTITY_DATA, NbtComponent.DEFAULT);
 						if (nbtComponent.isEmpty()) {

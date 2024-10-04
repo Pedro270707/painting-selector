@@ -37,7 +37,7 @@ public class PaintingSelector implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(PaintingChangePacket.PACKET_ID, (payload, context) -> {
 			ItemStack stack = context.player().getInventory().getStack(payload.slot());
 			if (stack.isEmpty() || !stack.isOf(Items.PAINTING)) return;
-			PSHelper.setPaintingId(stack, payload.paintingId(), context.player().getWorld().getRegistryManager());
+			PSHelper.setPaintingId(context.player(), stack, payload.paintingId(), context.player().getWorld().getRegistryManager());
 			context.player().getInventory().setStack(payload.slot(), stack);
 			context.player().currentScreenHandler.sendContentUpdates();
 		});

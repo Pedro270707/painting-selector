@@ -4,6 +4,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtOps;
@@ -12,8 +13,11 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.PaintingVariantTags;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 public class PSHelper {
     public static final Identifier RANDOM_PAINTING_ID = Identifier.of(PaintingSelector.MOD_ID, "random");
@@ -34,11 +38,12 @@ public class PSHelper {
         }
     }
 
-    public static void setPaintingId(ItemStack stack, Identifier paintingId, RegistryWrapper.WrapperLookup lookup) {
-        if (paintingId.equals(RANDOM_PAINTING_ID)) {
+    public static void setPaintingId(PlayerEntity player, ItemStack stack, Identifier paintingId, RegistryWrapper.WrapperLookup lookup) {
+        Optional<RegistryEntry.Reference<PaintingVariant>> variant = lookup.createRegistryLookup().getOptionalEntry(RegistryKeys.PAINTING_VARIANT, RegistryKey.of(RegistryKeys.PAINTING_VARIANT, paintingId));
+        if (variant.isEmpty() || paintingId.equals(RANDOM_PAINTING_ID)) {
             setPainting(stack, null, lookup);
-        } else {
-            setPainting(stack, lookup.createRegistryLookup().getOrThrow(RegistryKeys.PAINTING_VARIANT).getOptional(RegistryKey.of(RegistryKeys.PAINTING_VARIANT, paintingId)).orElse(null), lookup);
+        } else if (player.isCreative() || variant.get().isIn(PaintingVariantTags.PLACEABLE)) {
+            setPainting(stack, variant.get(), lookup);
         }
     }
 }
