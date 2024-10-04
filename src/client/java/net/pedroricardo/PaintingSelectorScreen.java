@@ -6,14 +6,14 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,14 +43,14 @@ public class PaintingSelectorScreen extends Screen {
     public PaintingSelectorScreen(Supplier<List<Optional<PaintingVariant>>> paintingSupplier, PlayerEntity player, Hand hand, int initialPainting) {
         this(paintingSupplier, player, hand);
         int listSize = this.paintingSupplier.get().size();
-        this.currentPainting = Math.clamp(initialPainting, 0, listSize - 1);
+        this.currentPainting = MathHelper.clamp(initialPainting, 0, listSize - 1);
     }
 
     @Override
     protected void init() {
         super.init();
         if (PaintingSelectorClient.CONFIG.searchBar()) {
-            this.textOrSearchElement = this.addDrawableChild(new TextFieldWidget(this.textRenderer, 160, 20, Text.translatable("painting_selector.search")));
+            this.textOrSearchElement = this.addDrawableChild(new TextFieldWidget(this.textRenderer, 0, 0, 160, 20, Text.translatable("painting_selector.search")));
             ((TextFieldWidget)this.textOrSearchElement).setChangedListener((value) -> {
                 PaintingVariant oldVariant = this.paintingWidgets.isEmpty() || this.currentPainting >= this.paintingWidgets.size() ? null : this.paintingWidgets.get(this.currentPainting).getPainting();
                 this.setPaintings(this.paintingSupplier.get().stream().filter(variant -> {
@@ -66,11 +66,8 @@ public class PaintingSelectorScreen extends Screen {
             this.textOrSearchElement = this.addDrawableChild(new TextWidget(this.getTitle(), this.textRenderer));
         }
 
-        RegistryEntry<PaintingVariant> painting = null;
-        NbtComponent nbtComponent = this.player.getStackInHand(this.hand).getOrDefault(DataComponentTypes.ENTITY_DATA, NbtComponent.DEFAULT);
-        if (!nbtComponent.isEmpty()) {
-            painting = nbtComponent.get(PaintingEntity.VARIANT_MAP_CODEC).result().orElse(null);
-        }
+        NbtCompound nbt = this.player.getStackInHand(this.hand).getOrCreateSubNbt("EntityTag");
+        RegistryEntry<PaintingVariant> painting = PaintingEntity.readVariantFromNbt(nbt).orElse(null);
         this.setPaintings(this.paintingSupplier.get(), new FocusValue(FocusType.INITIAL, painting == null ? null : painting.value()));
 
         if (!this.paintingWidgets.isEmpty()) {
@@ -110,9 +107,9 @@ public class PaintingSelectorScreen extends Screen {
             this.currentPainting = 0;
             if (!this.paintingWidgets.isEmpty()) {
                 if (focusValue.type() == FocusType.INITIAL) {
-                    this.setInitialFocus(this.paintingWidgets.getFirst());
+                    this.setInitialFocus(this.paintingWidgets.get(0));
                 } else if (focusValue.type() == FocusType.NORMAL) {
-                    this.setFocused(this.paintingWidgets.getFirst());
+                    this.setFocused(this.paintingWidgets.get(0));
                 }
                 this.recenter();
             }
@@ -120,8 +117,8 @@ public class PaintingSelectorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount) || this.increment((int)-Math.signum(verticalAmount));
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        return super.mouseScrolled(mouseX, mouseY, amount) || this.increment((int)-Math.signum(amount));
     }
 
     @Override
@@ -183,7 +180,7 @@ public class PaintingSelectorScreen extends Screen {
         int listSize = this.paintingWidgets.size();
         int oldPainting = this.currentPainting;
         if (listSize > 0) {
-            this.currentPainting = Math.clamp(this.currentPainting + amount, 0, listSize - 1);
+            this.currentPainting = MathHelper.clamp(this.currentPainting + amount, 0, listSize - 1);
         }
         this.recenter();
         return oldPainting != this.currentPainting;

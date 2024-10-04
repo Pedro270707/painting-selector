@@ -1,6 +1,7 @@
 package net.pedroricardo;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -9,6 +10,7 @@ import net.minecraft.client.gui.screen.narration.NarrationPart;
 import net.minecraft.client.gui.widget.PressableWidget;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -16,7 +18,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import net.pedroricardo.network.PaintingChangePacket;
 import org.jetbrains.annotations.Nullable;
 
 public class PaintingWidget extends PressableWidget {
@@ -55,8 +56,11 @@ public class PaintingWidget extends PressableWidget {
 
         if (PaintingSelectorClient.inPaintingSelectorServer) {
             ItemStack itemStack = client.player.getStackInHand(this.hand);
-            ClientPlayNetworking.send(new PaintingChangePacket(client.player.getInventory().getSlotWithStack(itemStack), this.getPainting() == null ? PSHelper.RANDOM_PAINTING_ID : Registries.PAINTING_VARIANT.getId(this.getPainting())));
-        } else if (client.player.isInCreativeMode() && client.interactionManager != null) {
+            PacketByteBuf packetByteBuf = PacketByteBufs.create();
+            packetByteBuf.writeInt(client.player.getInventory().getSlotWithStack(itemStack));
+            packetByteBuf.writeIdentifier(this.getPainting() == null ? PSHelper.RANDOM_PAINTING_ID : Registries.PAINTING_VARIANT.getId(this.getPainting()));
+            ClientPlayNetworking.send(new Identifier(PaintingSelector.MOD_ID, "change_painting"), packetByteBuf);
+        } else if (client.player.isCreative() && client.interactionManager != null) {
             ItemStack itemStack = client.player.getStackInHand(this.hand);
             PSHelper.setPainting(itemStack, this.getPainting());
             client.player.setStackInHand(this.hand, itemStack);
@@ -67,13 +71,14 @@ public class PaintingWidget extends PressableWidget {
     }
 
     @Override
-    protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.hovered = mouseX >= this.getX() && mouseY >= this.getY() && mouseX < this.getX() + this.width && mouseY < this.getY() + this.height;
         int paintingWidth;
         int paintingHeight;
         if (this.getPainting() == null) {
             paintingWidth = RANDOM_PAINTING_WIDTH;
             paintingHeight = RANDOM_PAINTING_HEIGHT;
-            context.drawGuiTexture(new Identifier(PaintingSelector.MOD_ID, "random_painting"), this.getX(), this.getY(), paintingWidth, paintingHeight);
+            context.drawTexture(new Identifier(PaintingSelector.MOD_ID, "textures/gui/sprites/random_painting.png"), this.getX(), this.getY(), 0, 0, paintingWidth, paintingHeight, paintingWidth, paintingHeight);
         } else {
             paintingWidth = this.getPainting().getWidth();
             paintingHeight = this.getPainting().getHeight();

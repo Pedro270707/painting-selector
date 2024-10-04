@@ -3,8 +3,6 @@ package net.pedroricardo;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
 import net.minecraft.item.ItemStack;
@@ -34,12 +32,11 @@ public class PaintingSelectorClient implements ClientModInitializer {
 						paintings.add(Optional.empty());
 						Registries.PAINTING_VARIANT.forEach(paintingVariant -> paintings.add(Optional.of(paintingVariant)));
 					} else {
-						NbtComponent nbtComponent = stack.getOrDefault(DataComponentTypes.ENTITY_DATA, NbtComponent.DEFAULT);
-						if (nbtComponent.isEmpty()) {
+						Optional<RegistryEntry<PaintingVariant>> optional = PaintingEntity.readVariantFromNbt(stack.getOrCreateSubNbt("EntityTag"));
+						if (optional.isEmpty()) {
 							paintings.add(Optional.empty());
 						} else {
-							RegistryEntry<PaintingVariant> variant = nbtComponent.get(PaintingEntity.VARIANT_MAP_CODEC).result().orElse(null);
-							paintings.add(Optional.ofNullable(variant == null ? null : variant.value()));
+							paintings.add(Optional.of(optional.get().value()));
 						}
 					}
 					return paintings;

@@ -25,7 +25,7 @@ public class PaintingSelectorEmptyScreen
 
     @Override
     protected void init() {
-        this.textWidget = this.addDrawableChild(new NarratedMultilineTextWidget(this.width, this.title, this.textRenderer, 12));
+        this.textWidget = this.addDrawableChild(new NarratedMultilineTextWidget(this.textRenderer, this.title, this.width));
         this.buttonWidget = this.addDrawableChild(ButtonWidget.builder(ScreenTexts.BACK, (button) -> {
             MinecraftClient.getInstance().setScreen(null);
         }).build());
@@ -35,7 +35,7 @@ public class PaintingSelectorEmptyScreen
     @Override
     protected void initTabNavigation() {
         if (this.textWidget != null) {
-            this.textWidget.initMaxWidth(this.width);
+            this.textWidget.setMaxWidth(this.width);
             this.textWidget.setPosition(this.width / 2 - this.textWidget.getWidth() / 2, this.height / 2 - this.textRenderer.fontHeight / 2);
         }
         if (this.buttonWidget != null) {
@@ -46,11 +46,5 @@ public class PaintingSelectorEmptyScreen
     @Override
     protected boolean hasUsageText() {
         return false;
-    }
-
-    @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.applyBlur(delta);
-        this.renderDarkening(context);
     }
 }
