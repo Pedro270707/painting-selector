@@ -4,9 +4,11 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.tag.PaintingVariantTags;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,11 +26,12 @@ public class PSHelper {
         }
     }
 
-    public static void setPaintingId(ItemStack stack, Identifier paintingId) {
+    public static void setPaintingId(PlayerEntity player, ItemStack stack, Identifier paintingId) {
+        PaintingVariant variant = Registries.PAINTING_VARIANT.get(paintingId);
         if (paintingId.equals(RANDOM_PAINTING_ID)) {
             setPainting(stack, null);
-        } else {
-            setPainting(stack, Registries.PAINTING_VARIANT.get(paintingId));
+        } else if (player.isCreative() || Registries.PAINTING_VARIANT.getEntry(variant).isIn(PaintingVariantTags.PLACEABLE)) {
+            setPainting(stack, variant);
         }
     }
 }
