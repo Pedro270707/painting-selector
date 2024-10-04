@@ -9,7 +9,7 @@ import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.TypedActionResult;
 import net.pedroricardo.network.PSClientPackets;
@@ -29,17 +29,17 @@ public class PaintingSelectorClient implements ClientModInitializer {
 			if (player != MinecraftClient.getInstance().player) return TypedActionResult.pass(stack);
 			if (stack.isOf(Items.PAINTING)) {
 				MinecraftClient.getInstance().setScreen(new PaintingSelectorScreen(() -> {
-					ArrayList<Optional<PaintingVariant>> paintings = new ArrayList<>();
+					ArrayList<Optional<RegistryEntry<PaintingVariant>>> paintings = new ArrayList<>();
 					if (player.isCreative() || inPaintingSelectorServer) {
 						paintings.add(Optional.empty());
-						Registries.PAINTING_VARIANT.forEach(paintingVariant -> paintings.add(Optional.of(paintingVariant)));
+						world.getRegistryManager().get(RegistryKeys.PAINTING_VARIANT).streamEntries().forEach(paintingVariant -> paintings.add(Optional.of(paintingVariant)));
 					} else {
 						NbtComponent nbtComponent = stack.getOrDefault(DataComponentTypes.ENTITY_DATA, NbtComponent.DEFAULT);
 						if (nbtComponent.isEmpty()) {
 							paintings.add(Optional.empty());
 						} else {
 							RegistryEntry<PaintingVariant> variant = nbtComponent.get(PaintingEntity.VARIANT_MAP_CODEC).result().orElse(null);
-							paintings.add(Optional.ofNullable(variant == null ? null : variant.value()));
+							paintings.add(Optional.ofNullable(variant));
 						}
 					}
 					return paintings;

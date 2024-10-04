@@ -7,7 +7,7 @@ import net.minecraft.util.Identifier;
 import net.pedroricardo.PaintingSelector;
 
 public record PaintingSelectorSyncPacket() implements CustomPayload {
-    public static final CustomPayload.Id<PaintingSelectorSyncPacket> PACKET_ID = new CustomPayload.Id<>(new Identifier(PaintingSelector.MOD_ID, "sync_client"));
+    public static final CustomPayload.Id<PaintingSelectorSyncPacket> PACKET_ID = new CustomPayload.Id<>(Identifier.of(PaintingSelector.MOD_ID, "sync_client"));
     public static final PacketCodec<PacketByteBuf, PaintingSelectorSyncPacket> CODEC = PacketCodec.unit(new PaintingSelectorSyncPacket());
 
     @Override

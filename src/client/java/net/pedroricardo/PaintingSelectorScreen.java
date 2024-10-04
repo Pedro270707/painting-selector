@@ -23,8 +23,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class PaintingSelectorScreen extends Screen {
-    private List<Optional<PaintingVariant>> listOld;
-    private final Supplier<List<Optional<PaintingVariant>>> paintingSupplier;
+    private List<Optional<RegistryEntry<PaintingVariant>>> listOld;
+    private final Supplier<List<Optional<RegistryEntry<PaintingVariant>>>> paintingSupplier;
     private int currentPainting = -1;
     private final PlayerEntity player;
     private final Hand hand;
@@ -32,7 +32,7 @@ public class PaintingSelectorScreen extends Screen {
     private final List<PaintingWidget> paintingWidgets = new ArrayList<>();
     private Widget textOrSearchElement = null;
 
-    public PaintingSelectorScreen(Supplier<List<Optional<PaintingVariant>>> paintingSupplier, PlayerEntity player, Hand hand) {
+    public PaintingSelectorScreen(Supplier<List<Optional<RegistryEntry<PaintingVariant>>>> paintingSupplier, PlayerEntity player, Hand hand) {
         super(Text.translatable("painting_selector.title"));
         this.listOld = paintingSupplier.get();
         this.paintingSupplier = paintingSupplier;
@@ -40,7 +40,7 @@ public class PaintingSelectorScreen extends Screen {
         this.hand = hand;
     }
 
-    public PaintingSelectorScreen(Supplier<List<Optional<PaintingVariant>>> paintingSupplier, PlayerEntity player, Hand hand, int initialPainting) {
+    public PaintingSelectorScreen(Supplier<List<Optional<RegistryEntry<PaintingVariant>>>> paintingSupplier, PlayerEntity player, Hand hand, int initialPainting) {
         this(paintingSupplier, player, hand);
         int listSize = this.paintingSupplier.get().size();
         this.currentPainting = Math.clamp(initialPainting, 0, listSize - 1);
@@ -52,7 +52,7 @@ public class PaintingSelectorScreen extends Screen {
         if (PaintingSelectorClient.CONFIG.searchBar()) {
             this.textOrSearchElement = this.addDrawableChild(new TextFieldWidget(this.textRenderer, 160, 20, Text.translatable("painting_selector.search")));
             ((TextFieldWidget)this.textOrSearchElement).setChangedListener((value) -> {
-                PaintingVariant oldVariant = this.paintingWidgets.isEmpty() || this.currentPainting >= this.paintingWidgets.size() ? null : this.paintingWidgets.get(this.currentPainting).getPainting();
+                RegistryEntry<PaintingVariant> oldVariant = this.paintingWidgets.isEmpty() || this.currentPainting >= this.paintingWidgets.size() ? null : this.paintingWidgets.get(this.currentPainting).getPainting();
                 this.setPaintings(this.paintingSupplier.get().stream().filter(variant -> {
                     if (value.startsWith("author:")) {
                         return PaintingWidget.getPaintingAuthor(variant.orElse(null)).getString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT).substring("author:".length()));
@@ -71,25 +71,25 @@ public class PaintingSelectorScreen extends Screen {
         if (!nbtComponent.isEmpty()) {
             painting = nbtComponent.get(PaintingEntity.VARIANT_MAP_CODEC).result().orElse(null);
         }
-        this.setPaintings(this.paintingSupplier.get(), new FocusValue(FocusType.INITIAL, painting == null ? null : painting.value()));
+        this.setPaintings(this.paintingSupplier.get(), new FocusValue(FocusType.INITIAL, painting));
 
         if (!this.paintingWidgets.isEmpty()) {
-            this.textOrSearchElement.setPosition(this.width / 2 - this.textOrSearchElement.getWidth() - ((this.currentPainting >= this.paintingWidgets.size() || this.paintingWidgets.get(this.currentPainting).getPainting() == null) ? 20 : this.paintingWidgets.get(this.currentPainting).getPainting().getWidth() + 4), (this.height - this.textOrSearchElement.getHeight()) / 2);
+            this.textOrSearchElement.setPosition(this.width / 2 - this.textOrSearchElement.getWidth() - (this.paintingWidgets.get(this.currentPainting).getWidth() + 4), (this.height - this.textOrSearchElement.getHeight()) / 2);
         } else {
             MinecraftClient.getInstance().setScreen(new PaintingSelectorEmptyScreen(Text.translatable("painting_selector.no_paintings")));
         }
     }
 
-    public void setPaintings(List<Optional<PaintingVariant>> list, FocusValue focusValue) {
+    public void setPaintings(List<Optional<RegistryEntry<PaintingVariant>>> list, FocusValue focusValue) {
         this.currentPainting = -1;
         for (PaintingWidget widget : this.paintingWidgets) {
             this.remove(widget);
         }
         this.paintingWidgets.clear();
         for (int i = 0; i < list.size(); i++) {
-            Optional<PaintingVariant> painting = list.get(i);
+            Optional<RegistryEntry<PaintingVariant>> painting = list.get(i);
             PaintingWidget widget = new PaintingWidget(this.width / 2, this.height / 2, this.textRenderer, painting.orElse(null), this.hand);
-            widget.setX(this.width / 2 - (painting.map(PaintingVariant::getWidth).orElse(16)));
+            widget.setX(this.width / 2 - (painting.map(variant -> variant.value().width() * 16).orElse(PaintingWidget.RANDOM_PAINTING_WIDTH * 16)));
             widget.setY(widget.getY() - widget.getHeight() / 2 + i * 80);
             this.paintingWidgets.add(this.addDrawableChild(widget));
         }
@@ -136,9 +136,9 @@ public class PaintingSelectorScreen extends Screen {
 
     @Override
     public void tick() {
-        List<Optional<PaintingVariant>> list = this.paintingSupplier.get();
+        List<Optional<RegistryEntry<PaintingVariant>>> list = this.paintingSupplier.get();
         if (!this.listOld.equals(list)) {
-            PaintingVariant oldVariant = this.listOld.get(this.currentPainting).orElse(null);
+            RegistryEntry<PaintingVariant> oldVariant = this.listOld.get(this.currentPainting).orElse(null);
             this.listOld = list;
             this.setPaintings(list, new FocusValue(FocusType.NORMAL, oldVariant));
             return;
@@ -151,7 +151,7 @@ public class PaintingSelectorScreen extends Screen {
         }
 
         if (!this.paintingWidgets.isEmpty()) {
-            this.textOrSearchElement.setPosition(this.width / 2 - this.textOrSearchElement.getWidth() - ((this.currentPainting >= this.paintingWidgets.size() || this.paintingWidgets.get(this.currentPainting).getPainting() == null) ? 20 : this.paintingWidgets.get(this.currentPainting).getPainting().getWidth() + 4), (this.height - this.textOrSearchElement.getHeight()) / 2);
+            this.textOrSearchElement.setPosition(this.width / 2 - this.textOrSearchElement.getWidth() - (this.paintingWidgets.get(this.currentPainting).getWidth() + 4), (this.height - this.textOrSearchElement.getHeight()) / 2);
         } else {
             this.textOrSearchElement.setPosition((this.width - this.textOrSearchElement.getWidth()) / 2, (this.height - this.textOrSearchElement.getHeight()) / 2);
         }
@@ -207,5 +207,5 @@ public class PaintingSelectorScreen extends Screen {
         NORMAL
     }
 
-    public record FocusValue(FocusType type, PaintingVariant variant) {}
+    public record FocusValue(FocusType type, RegistryEntry<PaintingVariant> variant) {}
 }

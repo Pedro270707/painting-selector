@@ -10,6 +10,8 @@ import net.minecraft.client.gui.widget.PressableWidget;
 import net.minecraft.entity.decoration.painting.PaintingVariant;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -21,28 +23,28 @@ import org.jetbrains.annotations.Nullable;
 
 public class PaintingWidget extends PressableWidget {
     private final TextRenderer textRenderer;
-    private final @Nullable PaintingVariant painting;
+    private final @Nullable RegistryEntry<PaintingVariant> painting;
     private final Hand hand;
 
-    public static final int RANDOM_PAINTING_WIDTH = 16, RANDOM_PAINTING_HEIGHT = 16;
+    public static final int RANDOM_PAINTING_WIDTH = 1, RANDOM_PAINTING_HEIGHT = 1;
 
-    public PaintingWidget(int x, int y, TextRenderer textRenderer, @Nullable PaintingVariant painting, Hand hand) {
-        super(x, y, (painting == null ? 0 : painting.getWidth()) + 100, painting == null ? 16 : painting.getHeight(), getPaintingTitle(painting));
+    public PaintingWidget(int x, int y, TextRenderer textRenderer, @Nullable RegistryEntry<PaintingVariant> painting, Hand hand) {
+        super(x, y, (painting == null ? RANDOM_PAINTING_WIDTH * 16 : painting.value().width() * 16), painting == null ? RANDOM_PAINTING_HEIGHT * 16 : painting.value().height() * 16, getPaintingTitle(painting));
         this.textRenderer = textRenderer;
         this.painting = painting;
         this.hand = hand;
     }
 
-    protected static MutableText getPaintingTitle(@Nullable PaintingVariant painting) {
-        return painting == null ? Text.translatable("painting.random") : Text.translatable(Registries.PAINTING_VARIANT.getId(painting).toTranslationKey("painting", "title"));
+    protected static MutableText getPaintingTitle(@Nullable RegistryEntry<PaintingVariant> painting) {
+        return painting == null ? Text.translatable("painting.random") : Text.translatable(painting.getKey().map(RegistryKey::getValue).orElse(PSHelper.RANDOM_PAINTING_ID).toTranslationKey("painting", "title"));
     }
 
-    protected static MutableText getPaintingAuthor(@Nullable PaintingVariant painting) {
-        return painting == null ? Text.empty() : Text.translatable(Registries.PAINTING_VARIANT.getId(painting).toTranslationKey("painting", "author"));
+    protected static MutableText getPaintingAuthor(@Nullable RegistryEntry<PaintingVariant> painting) {
+        return painting == null ? Text.empty() : Text.translatable(painting.getKey().map(RegistryKey::getValue).orElse(PSHelper.RANDOM_PAINTING_ID).toTranslationKey("painting", "author"));
     }
 
-    protected static MutableText getPaintingSize(@Nullable PaintingVariant painting) {
-        return painting == null ? Text.empty() : Text.translatable("painting.dimensions", MathHelper.ceilDiv(painting.getWidth(), 16), MathHelper.ceilDiv(painting.getHeight(), 16));
+    protected static MutableText getPaintingSize(@Nullable RegistryEntry<PaintingVariant> painting) {
+        return painting == null ? Text.empty() : Text.translatable("painting.dimensions", painting.value().width(), painting.value().height());
     }
 
     @Override
@@ -55,10 +57,10 @@ public class PaintingWidget extends PressableWidget {
 
         if (PaintingSelectorClient.inPaintingSelectorServer) {
             ItemStack itemStack = client.player.getStackInHand(this.hand);
-            ClientPlayNetworking.send(new PaintingChangePacket(client.player.getInventory().getSlotWithStack(itemStack), this.getPainting() == null ? PSHelper.RANDOM_PAINTING_ID : Registries.PAINTING_VARIANT.getId(this.getPainting())));
+            ClientPlayNetworking.send(new PaintingChangePacket(client.player.getInventory().getSlotWithStack(itemStack), this.getPainting() == null ? PSHelper.RANDOM_PAINTING_ID : this.getPainting().getKey().map(RegistryKey::getValue).orElse(PSHelper.RANDOM_PAINTING_ID)));
         } else if (client.player.isInCreativeMode() && client.interactionManager != null) {
             ItemStack itemStack = client.player.getStackInHand(this.hand);
-            PSHelper.setPainting(itemStack, this.getPainting());
+            PSHelper.setPainting(itemStack, this.getPainting(), client.world.getRegistryManager());
             client.player.setStackInHand(this.hand, itemStack);
             client.interactionManager.clickCreativeStack(itemStack, 36 + client.player.getInventory().getSlotWithStack(itemStack));
             client.player.playerScreenHandler.sendContentUpdates();
@@ -71,13 +73,13 @@ public class PaintingWidget extends PressableWidget {
         int paintingWidth;
         int paintingHeight;
         if (this.getPainting() == null) {
-            paintingWidth = RANDOM_PAINTING_WIDTH;
-            paintingHeight = RANDOM_PAINTING_HEIGHT;
-            context.drawGuiTexture(new Identifier(PaintingSelector.MOD_ID, "random_painting"), this.getX(), this.getY(), paintingWidth, paintingHeight);
+            paintingWidth = RANDOM_PAINTING_WIDTH * 16;
+            paintingHeight = RANDOM_PAINTING_HEIGHT * 16;
+            context.drawGuiTexture(Identifier.of(PaintingSelector.MOD_ID, "random_painting"), this.getX(), this.getY(), paintingWidth, paintingHeight);
         } else {
-            paintingWidth = this.getPainting().getWidth();
-            paintingHeight = this.getPainting().getHeight();
-            context.drawSprite(this.getX(), this.getY(), 100, paintingWidth, paintingHeight, MinecraftClient.getInstance().getPaintingManager().getPaintingSprite(this.getPainting()));
+            paintingWidth = this.getPainting().value().width() * 16;
+            paintingHeight = this.getPainting().value().height() * 16;
+            context.drawSprite(this.getX(), this.getY(), 100, paintingWidth, paintingHeight, MinecraftClient.getInstance().getPaintingManager().getPaintingSprite(this.getPainting().value()));
             context.drawTextWithShadow(this.textRenderer, getPaintingSize(this.getPainting()).formatted(Formatting.GRAY), this.getX() + paintingWidth + 6, this.getY() + 20 + (paintingHeight > 20 ? 2 : 0), 0xFFFFFFFF);
         }
         if (this.isSelected()) {
@@ -92,12 +94,12 @@ public class PaintingWidget extends PressableWidget {
         if (this.getPainting() == null || !PaintingSelectorClient.CONFIG.narrateAll()) {
             builder.put(NarrationPart.TITLE, getPaintingTitle(this.getPainting()));
         } else {
-            builder.put(NarrationPart.TITLE, Text.translatable("narration.painting_selector.widget", getPaintingTitle(this.getPainting()), getPaintingAuthor(this.getPainting()), MathHelper.ceilDiv(this.getPainting().getWidth(), 16), MathHelper.ceilDiv(this.getPainting().getHeight(), 16)));
+            builder.put(NarrationPart.TITLE, Text.translatable("narration.painting_selector.widget", getPaintingTitle(this.getPainting()), getPaintingAuthor(this.getPainting()), MathHelper.ceilDiv(this.getPainting().value().width(), 16), MathHelper.ceilDiv(this.getPainting().value().height(), 16)));
         }
     }
 
     @Nullable
-    public PaintingVariant getPainting() {
+    public RegistryEntry<PaintingVariant> getPainting() {
         return this.painting;
     }
 }

@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 import net.pedroricardo.PaintingSelector;
 
 public record PaintingChangePacket(int slot, Identifier paintingId) implements CustomPayload {
-    public static final CustomPayload.Id<PaintingChangePacket> PACKET_ID = new CustomPayload.Id<>(new Identifier(PaintingSelector.MOD_ID, "change_painting"));
+    public static final CustomPayload.Id<PaintingChangePacket> PACKET_ID = new CustomPayload.Id<>(Identifier.of(PaintingSelector.MOD_ID, "change_painting"));
     public static final PacketCodec<ByteBuf, PaintingChangePacket> CODEC = PacketCodec.tuple(PacketCodecs.INTEGER, PaintingChangePacket::slot, Identifier.PACKET_CODEC, PaintingChangePacket::paintingId, PaintingChangePacket::new);
 
     @Override

@@ -1,6 +1,6 @@
 {
   "painting_selector.title": "Select Painting",
-  "painting_selector.no_paintings": "No paintings available (how?)",
+  "painting_selector.no_paintings": "No paintings available",
   "narration.painting_selector.widget": "Selected: '%s' by %s, size: %s by %s",
   "painting_selector.search": "Search...",
   "text.config.painting-selector.title": "Painting Selector",
